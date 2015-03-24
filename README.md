@@ -54,26 +54,33 @@ To run BigBWA we need a working Hadoop cluster. Also, in this cluster, we need t
 Here is an example of how to run BigBWA with BWA-MEM paired algorithm. This example assumes that our index is in all cluster nodes at /Data/HumanBase/ .
 
 First we need to have input Fastq reads, we can get them from the 1000 Genomes project ftp.
+
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/NA12750/sequence_read/ERR000589_2.filt.fastq.gz
 	
 Next we will uncompress these files:
+
 	gzip -d ERR000589_1.filt.fastq.gz
 	gzip -d ERR000589_2.filt.fastq.gz
 	
 After that, we need to use one of the Python tools in the utils folder:
+
 	cd utils ; python Fq2FqBigDataPaired.py ../ERR000589_1.filt.fastq ../ERR000589_2.filt.fastq ../ERR000589.fqBD ; cd ..
 	
 Then, we have to upload input data into HDFS:
+
 	hdfs dfs -copyFromLocal ERR000589.fqBD ERR000589.fqBD
 	
 And finally, we can run BigBWA in Hadoop:
+
 	hadoop jar BigBWA.jar -archives bwa.zip -D mapreduce.input.fileinputformat.split.minsize=123641127 -D mapreduce.input.fileinputformat.split.maxsize=123641127 mem paired /Data/HumanBase/hg19 ERR000589.fqBD ExitERR000589
 	
 After that, we will have the output in the HDFS. To get it to the local filesystem:
+
 	mkdir Exit
 	cd Exit ; hdfs dfs -copyToLocal ExitERR000589/Output* ./ ; cd ..
 	
 The output will be splited in pieces. If we want to ut it together we can use one of our Python utils or use samtools merge:
+
 	cd utils ; python FullSam.py Exit/ ../OutputFile.sam ; cd ..
 	
