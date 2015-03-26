@@ -17,12 +17,15 @@
   * along with BigBWA. If not, see <http://www.gnu.org/licenses/>.
   */
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,10 +34,11 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -164,9 +168,15 @@ public class BigBWA extends Configured implements Tool {
 		job.setJarByClass(BigBWA.class);
 		job.setMapperClass(BigBWAMap.class);
 		//job.setCombinerClass(BigBWACombiner.class);
-		//job.setReducerClass(BigBWAReducer.class);
+		job.setReducerClass(BigBWAReducer.class);
+		
+		job.setMapOutputKeyClass(IntWritable.class);
+		job.setMapOutputValueClass(Text.class);
 
-		job.setNumReduceTasks(0);
+		job.setOutputKeyClass(NullWritable.class);
+		job.setOutputValueClass(Text.class);
+
+		job.setNumReduceTasks(1);
 
 
 		FileInputFormat.addInputPath(job, new Path(inputPath));
@@ -177,7 +187,7 @@ public class BigBWA extends Configured implements Tool {
 
 	
 	//Mapper class. We follow the In-Mapper Combining pattern
-	public static class BigBWAMap extends Mapper<Object,Text,Text,IntWritable> {
+	public static class BigBWAMap extends Mapper<Object,Text,IntWritable,Text> {
 
 		File fout;
 		FileOutputStream fos;
@@ -286,9 +296,9 @@ public class BigBWA extends Configured implements Tool {
 			}
 		}
 
-		//Finally, the computation and the calling to BWA methos, it is made in the cleanup method
+		//Finally, the computation and the calling to BWA methods, it is made in the cleanup method
 		@Override
-		public void cleanup(Context context){
+		public void cleanup(Context context) throws InterruptedException{
 
 			try {
 				
@@ -409,6 +419,8 @@ public class BigBWA extends Configured implements Tool {
 					fout.delete();
 					fout2.delete();
 					
+					context.write(new IntWritable(this.identificador), new Text(outputDir+"/Output"+this.identificador+".sam"));
+					
 				}
 				//Single algorithms
 				else if(conf.get("mem").equals("true")){
@@ -472,6 +484,83 @@ public class BigBWA extends Configured implements Tool {
 
 		}
 
+
+	}
+	
+	public static class BigBWAReducer extends Reducer<IntWritable,Text,NullWritable,Text> {
+
+		private String outputFile;
+		private String outputDir;
+		private HashMap<Integer,String> inputFiles;
+		
+		@Override
+		protected void setup(Context context) {
+			
+			this.outputDir = context.getConfiguration().get("outputGenomics");
+			this.outputFile = this.outputDir+"/FinalOutput.sam";
+			
+			this.inputFiles = new HashMap<Integer,String>();
+			
+		}
+		
+		@Override
+		public void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+			try{
+
+				//In theory, there is just one value per key
+			    for (Text val : values) {
+			    	inputFiles.put(key.get(), val.toString());
+			    }
+					
+			}
+			catch(Exception e){
+				System.out.println(e.toString());
+			}
+		}
+		
+		@Override
+		public void cleanup(Context context) throws IOException, InterruptedException {
+			
+			FileSystem fs = FileSystem.get(context.getConfiguration());
+						
+			int fileNumber = this.inputFiles.size();
+			
+			boolean readHeader = true;
+			
+			for(int i = 0; i< fileNumber; i++){
+				
+				String currentFile = this.inputFiles.get(i);
+				
+				BufferedReader d = new BufferedReader(new InputStreamReader(fs.open(new Path(currentFile))));
+				
+				String line = "";
+				
+				while ((line = d.readLine())!=null) {
+					
+					if((line.startsWith("@") && readHeader) || (!line.startsWith("@")) ){
+						//bufferOut.write(line);
+						context.write(NullWritable.get(), new Text(line));
+					}
+					
+					
+				}
+				
+				readHeader = false;
+				
+				d.close();
+				
+				fs.delete(new Path(currentFile), true);
+
+			}
+			
+			//bufferOut.close();
+
+			
+			
+
+			
+		}
+		
 
 	}
 

@@ -43,7 +43,7 @@ def main():
 		ficheiroEntrada2 = open(nomeFicheiroEntrada2,'r')
 		
 		
-		lineNumber = 1
+		lineNumber = 0
 		
 		linhaSaida1 = ""
 		linhaSaida2 = ""
@@ -61,6 +61,9 @@ def main():
 		
 			diff = False
 		
+			if(not line1.startswith("@")):
+				lineNumber = lineNumber + 1
+		
 			if line1 != line2:
 				
 				
@@ -76,15 +79,15 @@ def main():
 					for i in range(0,sameColumns):
 						if(i!=4 and items1[i] != items2[i] and int(items1[4])>0 and int(items2[4])>0):
 							diff = True
-							numberOfDifferences = numberOfDifferences + 1
+							
 						
 					if(diff):
 						print "-> "+line1.replace("\n","")
 						print "<- "+line2.replace("\n","")
 						print "----------"
-				
+						numberOfDifferences = numberOfDifferences + 1
 					
-			lineNumber = lineNumber + 1
+
 			
 			line1 = ficheiroEntrada1.readline()
 			line2 = ficheiroEntrada2.readline()
@@ -93,7 +96,11 @@ def main():
 		ficheiroEntrada2.close()
 
 		print "Diffs = "+ str(numberOfDifferences)
-
+		
+		percentage = (float(numberOfDifferences) * 100.0) / float(lineNumber)
+		
+		print "Percentage of differences: "+str(percentage)
+		
 		return 1
 
 	
