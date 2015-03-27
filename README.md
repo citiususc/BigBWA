@@ -41,7 +41,7 @@ To run **BigBWA** we need to upload the libbwa.so shared library into Hadoop dis
 # Getting started #
 
 ## Requirements
-To build **BigBWA**, requirements are the same than the ones to build bwa. To build the jar file we are going to run in Hadoop, three hadoop jars are required. This jar files can be found inside libs and libs32 folders. Depending on yout Hadoop installation you should use libs (for 64 bits) or libs32 (for 32 bits). Here follows an example of how to build **BigBWA**:
+To build **BigBWA**, requirements are the same than the ones to build bwa, with the only exception that you need to have defined the *JAVA_HOME* environment variables. To build the jar file we are going to run in Hadoop, three hadoop jars are required. This jar files can be found inside libs and libs32 folders. Depending on yout Hadoop installation you should use libs (for 64 bits) or libs32 (for 32 bits). Here follows an example of how to build **BigBWA**:
 
 	git clone https://github.com/citiususc/BigBWA.git
 	cd BigBWA
@@ -85,6 +85,20 @@ After that, we will have the output in the HDFS. To get it to the local filesyst
 The output will be splited in pieces. If we want to ut it together we can use one of our Python utils or use samtools merge:
 
 	cd utils ; python FullSam.py Exit/ ../OutputFile.sam ; cd ..
+
+##Frequently asked questions (FAQs)
+
+1. [I can not build the tool because *jni_md.h* is missing.](#building1)
+
+
+####<a name="building1"></a>1. I can not build the tool because *jni_md.h* is missing.
+Depending on your Linux distribution you should edit bwa Makefile, either 0.7 or 0.5, and change the line:
+
+	INCLUDES=      -I$(JAVA_HOME)/include/ -fPIC
+	
+By:
+
+	INCLUDES=	-I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux/  -fPIC
 
 
 [1]: https://github.com/lh3/bwa
