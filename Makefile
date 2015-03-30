@@ -13,11 +13,11 @@ all: bigbwa_java
 bwa:
 	$(MAKE) -C $(BWA_DIR)/$(BWA)
 	if [ ! -d "$(BUILD_DIR)" ]; then mkdir $(BUILD_DIR); fi
-	cp $(BWA_DIR)/$(BWA)/*.o $(BUILD_DIR)/
+	cp $(BWA_DIR)/$(BWA)/*.o $(BUILD_DIR)
 
 bigbwa:
 	if [ ! -d "$(BUILD_DIR)" ]; then mkdir $(BUILD_DIR); fi
-	$(CC) $(BIGBWA_FLAGS) $(SRC_DIR)/bwa_jni.c -o $(BUILD_DIR)/bwa_jni.o -lrt
+	$(CC) $(BIGBWA_FLAGS) $(SRC_DIR)/bwa_jni.c -o $(BUILD_DIR)/bwa_jni.o $(LIBBWA_LIBS) 
 
 libbwa.so: bigbwa bwa
 	$(CC) $(LIBBWA_FLAGS) $(BUILD_DIR)/libbwa.so $(BUILD_DIR)/*.o $(LIBBWA_LIBS)

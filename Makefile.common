@@ -9,13 +9,6 @@ LOCATION = `pwd`
 SRC_DIR = ./src
 BUILD_DIR = build
 
-# Bwa variables ########
-BWA_DIR = ./bwa
-BWA = bwa-0.7.12
-BIGBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
-LIBBWA_FLAGS = -shared -o
-LIBBWA_LIBS = -lrt
-
 # Hadoop variables ########
 HADOOP_LIBS_DIR = ./libs
 
@@ -28,4 +21,11 @@ JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 endif
 
 JAR_FILES = $(HADOOP_LIBS_DIR)/commons-logging-1.1.3.jar:$(HADOOP_LIBS_DIR)/hadoop-common-2.6.0.jar:$(HADOOP_LIBS_DIR)/hadoop-mapreduce-client-core-2.6.0.jar
+
+# Bwa variables ########
+BWA_DIR = ./bwa
+BWA = bwa-0.7.12
+BIGBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
+LIBBWA_FLAGS = -shared -o
+LIBBWA_LIBS = -lrt 
 
