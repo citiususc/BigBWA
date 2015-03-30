@@ -1,6 +1,7 @@
 include ./Makefile.common
 
 .PHONY: bigbwa libbwa.so bwa clean
+
 all: bigbwa_java
 	@echo "================================================================================"
 	@echo "BigBWA has been compiled."
@@ -10,13 +11,13 @@ all: bigbwa_java
 	@echo "================================================================================"
 
 bwa:
-	$(MAKE) -C $(BWA_DIR)$(BWA)/
+	$(MAKE) -C $(BWA_DIR)/$(BWA)/
 	if [ ! -d "$(BUILD_DIR)" ]; then mkdir $(BUILD_DIR); fi
-	cp $(BWA_DIR)$(BWA)/*.o $(BUILD_DIR)/
+	cp $(BWA_DIR)/$(BWA)/*.o $(BUILD_DIR)/
 
 bigbwa:
 	if [ ! -d "$(BUILD_DIR)" ]; then mkdir $(BUILD_DIR); fi
-	$(CC) $(BIGBWA_FLAGS) $(SRC_DIR)bwa_jni.c -o $(BUILD_DIR)/bwa_jni.o -lrt
+	$(CC) $(BIGBWA_FLAGS) $(SRC_DIR)/bwa_jni.c -o $(BUILD_DIR)/bwa_jni.o -lrt
 
 libbwa.so: bigbwa bwa
 	$(CC) $(LIBBWA_FLAGS) $(BUILD_DIR)/libbwa.so $(BUILD_DIR)/*.o $(LIBBWA_LIBS)
@@ -29,4 +30,4 @@ bigbwa_java: libbwa.so
 
 clean:
 	$(RMR) $(BUILD_DIR)
-	$(MAKE) clean -C $(BWA_DIR)$(BWA)/
+	$(MAKE) clean -C $(BWA_DIR)/$(BWA)

@@ -4,34 +4,28 @@ JAR = jar
 RMR = rm -Rf
 RM = rm -f
 
-#Bwa variables
-BWA_DIR = ./bwa/
-BWA = bwa-0.7.12
-
-#Hadoop variables
-HADOOP_LIBS_DIR = ./libs/
-HADOOP_LIBS = 
-
 MAKE = make
-
-ifndef JAVA_HOME 
-JAVA_HOME = /usr/lib/jvm/java
-JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux/
-else
-JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux/
-endif
-
-
-
+LOCATION = `pwd`
+SRC_DIR = ./src
 BUILD_DIR = build
 
-JAR_FILES = $(HADOOP_LIBS_DIR)$(HADOOP_LIBS)commons-logging-1.1.3.jar:$(HADOOP_LIBS_DIR)$(HADOOP_LIBS)hadoop-common-2.6.0.jar:$(HADOOP_LIBS_DIR)$(HADOOP_LIBS)hadoop-mapreduce-client-core-2.6.0.jar
-
-SRC_DIR = ./src/
-
+# Bwa variables ########
+BWA_DIR = ./bwa
+BWA = bwa-0.7.12
 BIGBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
-
 LIBBWA_FLAGS = -shared -o
 LIBBWA_LIBS = -lrt
 
-LOCATION = `pwd`
+# Hadoop variables ########
+HADOOP_LIBS_DIR = ./libs
+
+# JAVA variables ####### 
+ifndef JAVA_HOME 
+JAVA_HOME = /usr/lib/jvm/java
+JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+else
+JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+endif
+
+JAR_FILES = $(HADOOP_LIBS_DIR)/commons-logging-1.1.3.jar:$(HADOOP_LIBS_DIR)/hadoop-common-2.6.0.jar:$(HADOOP_LIBS_DIR)/hadoop-mapreduce-client-core-2.6.0.jar
+
