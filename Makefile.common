@@ -1,6 +1,6 @@
-CC =gcc
-JAVAC =javac
-JAR =jar
+CC = gcc
+JAVAC = javac
+JAR = jar
 RMR = rm -Rf
 RM = rm -f
 
@@ -15,8 +15,13 @@ HADOOP_LIBS =
 MAKE = make
 
 ifndef JAVA_HOME 
-JAVA_HOME = /usr/lib/jvm/java-7-openjdk-amd64/
+JAVA_HOME = /usr/lib/jvm/java
+JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux/
+else
+JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux/
 endif
+
+
 
 BUILD_DIR = build
 
@@ -24,7 +29,7 @@ JAR_FILES = $(HADOOP_LIBS_DIR)$(HADOOP_LIBS)commons-logging-1.1.3.jar:$(HADOOP_L
 
 SRC_DIR = ./src/
 
-BIGBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux/
+BIGBWA_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
 
 LIBBWA_FLAGS = -shared -o
 LIBBWA_LIBS = -lrt
