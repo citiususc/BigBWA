@@ -11,7 +11,7 @@ all: bigbwa_java
 	@echo "================================================================================"
 
 bwa:
-	$(MAKE) -C $(BWA_DIR)/$(BWA)/
+	$(MAKE) -C $(BWA_DIR)/$(BWA)
 	if [ ! -d "$(BUILD_DIR)" ]; then mkdir $(BUILD_DIR); fi
 	cp $(BWA_DIR)/$(BWA)/*.o $(BUILD_DIR)/
 
@@ -24,7 +24,7 @@ libbwa.so: bigbwa bwa
 	cd $(BUILD_DIR) && zip -r bwa ./* && cd ..
 
 bigbwa_java: libbwa.so
-	$(JAVAC) -cp $(JAR_FILES) -d $(BUILD_DIR) -Xlint:none $(SRC_DIR)*.java
+	$(JAVAC) -cp $(JAR_FILES) -d $(BUILD_DIR) -Xlint:none $(SRC_DIR)/*.java
 	cd $(BUILD_DIR) && $(JAR) cfe BigBWA.jar BigBWA ./*.class && cd ..
 	cd $(BUILD_DIR) && $(JAR) cfe BigBWASeq.jar BwaSeq ./*.class && cd ..
 
