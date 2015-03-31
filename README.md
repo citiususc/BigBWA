@@ -67,16 +67,16 @@ Next we will uncompress these files:
 After that, we need to use one of the Python tools in the utils folder:
 
 	cd src/utils
-	python Fq2FqBigDataPaired.py ../../ERR000589_1.filt.fastq ../../ERR000589_2.filt.fastq ../../ERR000589.fqBD
+	python Fq2FqBigDataPaired.py ../../ERR000589_1.filt.fastq ../../ERR000589_2.filt.fastq ../../ERR000589.fqBDP
 	cd ../../
 	
 Then, we have to upload input data into HDFS:
 
-	hdfs dfs -copyFromLocal ERR000589.fqBD ERR000589.fqBD
+	hdfs dfs -copyFromLocal ERR000589.fqBDP ERR000589.fqBDP
 	
 And finally, we can run **BigBWA** in Hadoop:
 
-	hadoop jar BigBWA.jar -archives bwa.zip -D mapreduce.input.fileinputformat.split.minsize=123641127 -D mapreduce.input.fileinputformat.split.maxsize=123641127 -mem -paired -index /Data/HumanBase/hg19 -r ERR000589.fqBD ExitERR000589
+	hadoop jar BigBWA.jar -archives bwa.zip -D mapreduce.input.fileinputformat.split.minsize=123641127 -D mapreduce.input.fileinputformat.split.maxsize=123641127 -mem -paired -index /Data/HumanBase/hg19 -r ERR000589.fqBDP ExitERR000589
 
 What we do with these options is:
 * **-mem** - We indicate that we are going to use the mem algorithm.
@@ -96,7 +96,7 @@ After the execution, we can get the otput to the local filesystem by typing.
 	hdfs dfs -copyToLocal ExitERR000589/part-r-00000 ./
 	cd ..
 	
-if we didn't use a reducer, the output will be splited in pieces. If we want to put it together we can use one of our Python utils or use samtools merge:
+If we didn't use a reducer, the output will be splited in pieces. If we want to put it together we can use one of our Python utils or use samtools merge:
 
 	mkdir Exit
 	cd Exit 
