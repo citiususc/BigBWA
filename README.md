@@ -62,9 +62,6 @@ And finally, we can run **BigBWA** in Hadoop:
 
 	hadoop jar BigBWA.jar -archives bwa.zip -D mapreduce.input.fileinputformat.split.minsize=123641127 -D mapreduce.input.fileinputformat.split.maxsize=123641127 mem paired /Data/HumanBase/hg19 ERR000589.fqBD ExitERR000589
 	
-The syntax here is:
-	hadoop jar BigBWA.jar -archives bwa.zip <hadoop_options> <aln|mem|memthread> <paired|single> [threads_number] <index_prefix> <in> <out>
-	
 After that, we will have the output in the HDFS. To get it to the local filesystem:
 
 	mkdir Exit
