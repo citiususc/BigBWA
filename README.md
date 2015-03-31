@@ -7,6 +7,7 @@ Approaching the Burrows-Wheeler Aligner to Big Data Technologies
 
 * BWA-MEM paired.
 * BWA-ALN paired.
+* BWA-SW paired.
 
 Current version is 0.1.
 
