@@ -5,9 +5,11 @@ Approaching the Burrows-Wheeler Aligner to Big Data Technologies
 
 **BigBWA** is a tool to run [BWA][1] in a [Hadooop][2] cluster. **BigBWA** splits the [Fastq][3] input reads in pieces and process this pieces in parallel. For now, it supports the following BWA algorithms.
 
-* BWA-MEM paired.
-* BWA-ALN paired.
-* BWA-SW paired.
+* **BWA-MEM**
+* **BWA-ALN**
+* **BWA-SW**
+
+All of them work with paired and single reads.
 
 Current version is 0.1.
 
