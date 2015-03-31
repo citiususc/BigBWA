@@ -20,7 +20,7 @@ else
 JAVA_HOME_INCLUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 endif
 
-JAR_FILES = $(HADOOP_LIBS_DIR)/commons-logging-1.1.3.jar:$(HADOOP_LIBS_DIR)/hadoop-common-2.6.0.jar:$(HADOOP_LIBS_DIR)/hadoop-mapreduce-client-core-2.6.0.jar
+JAR_FILES = $(HADOOP_LIBS_DIR)/commons-logging-1.1.3.jar:$(HADOOP_LIBS_DIR)/hadoop-common-2.6.0.jar:$(HADOOP_LIBS_DIR)/hadoop-mapreduce-client-core-2.6.0.jar:$(HADOOP_LIBS_DIR)/commons-cli-1.2.jar
 
 # Bwa variables ########
 BWA_DIR = ./bwa
