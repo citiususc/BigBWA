@@ -7,7 +7,7 @@ all: bigbwa_java
 	@echo "BigBWA has been compiled."
 	@echo "Location    = $(LOCATION)/$(BUILD_DIR)/"
 	@echo "JAVA_HOME   = $(JAVA_HOME)"
-	@echo "HADOOP_HOME = $(DEBUG)"
+	@echo "HADOOP_HOME = $(HADOOP_HOME)"
 	@echo "================================================================================"
 
 bwa:
