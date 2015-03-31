@@ -80,7 +80,7 @@ And finally, we can run **BigBWA** in Hadoop:
 
 What we do with these options is:
 * **-mem** - We indicate that we are going to use the mem algorithm.
-* **-paired** - the algorithm is going to use paired reads.
+* **-paired** - The algorithm is going to use paired reads.
 * **-index** - We specify the index prefix after this parameter. The index mus be available in all the cluster nodes at the same location.
 * **-r** - With this option we specify that we want to use a reducer.
 * The last two arguments are the input and output in your HDFS.
