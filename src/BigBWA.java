@@ -27,6 +27,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -61,10 +68,12 @@ public class BigBWA extends Configured implements Tool {
 	public int run(String[] args) throws Exception {
 		Configuration conf = this.getConf();
 
-		if (args.length < 3) {
-			System.err.println("Usage: hadoop jar BigBWA.jar <aln|mem|memthread> <paired|single> [threads_number] <index_prefix> <in> <out> ");
+		String correctUse = "hadoop jar BigBWA.jar -archives bwa.zip <hadoop_options> <-aln|-mem|-memthread> [threads_number] <-paired|-single> <-index index_prefix> <in> <out>";
+		
+		/*if (args.length < 3) {
+			System.err.println("Usage: hadoop jar BigBWA.jar -archives bwa.zip <hadoop_options> <aln|mem|memthread> <paired|single> [threads_number] <index_prefix> <in> <out> ");
 			System.exit(2);
-		}
+		}*/
 		for(String argumento: args){
 			System.out.println("Arg: "+argumento);
 		}
@@ -72,94 +81,129 @@ public class BigBWA extends Configured implements Tool {
 		String inputPath = "";
 		String outputPath = "";
 
+		boolean useReducer = false;
+		
 		//We set the timeout and stablish the bwa library to call BWA methods
 		conf.set("mapreduce.task.timeout", "0");
 		conf.set("mapreduce.map.env", "LD_LIBRARY_PATH=./bwa.zip/");
 
-		//mem algorithm
-		if(args[0].equals("mem") && (args.length == 5) ){
+		
+		
+		//Parse arguments
+		Options options = new Options();
 
+		//Algorithm options
+		options.addOption("mem", false, "Enables mem algorithm");
+		options.addOption("aln", false, "Enables aln algorithm");
+		
+		Option memthread   = OptionBuilder.withArgName( "Threads number" )
+                .hasArg()
+                .withDescription(  "Number of threads used per map" )
+                .create( "memthread" );
+
+		
+		options.addOption(memthread);
+		
+		//Paired or single
+		options.addOption("paired", false, "Enables mem hybrid algorithm");
+		options.addOption("single", false, "Enables mem hybrid algorithm");
+		
+		//Reducer option
+		options.addOption("r",false,"Enables the reducer");
+		
+		//Index
+		Option index   = OptionBuilder.withArgName( "Index prefix" )
+                .hasArg()
+                .withDescription(  "Prefix for the index created by bwa to use." )
+                .create( "index" );
+
+		
+		options.addOption(index);
+		
+		//To print the help
+		HelpFormatter formatter = new HelpFormatter();
+		
+		
+		//Parse the given arguments
+		CommandLineParser parser = new BasicParser();
+		CommandLine cmd = parser.parse( options, args);
+		
+		
+		//We look for the algorithm
+		if((cmd.hasOption("mem")) && (!cmd.hasOption("aln")&&(!cmd.hasOption("memthread")))) {
+		    //Case of the mem algorithm
 			conf.set("mem", "true");
 			conf.set("aln", "false");
-
-			conf.set("indexRoute",args[2]);
 			
-			conf.set("outputGenomics", args[4]);
-			outputPath = args[4];
-			inputPath = args[3];
-			
-			//Paired
-			if( args[1].equals("paired")){
-				System.out.println("mem paired");
-				
-				conf.set("paired", "true");
-				conf.set("single", "false");
-			}
-			//Single
-			else if( args[1].equals("single")){
-				System.out.println("mem single");
-				
-				conf.set("paired", "false");
-				conf.set("single", "true");
-			}
 		}
-		//Mem hybrid algorithm
-		else if(args[0].equals("memthread") && (args.length == 6) ){
-
-			conf.set("mem", "true");
-			conf.set("aln", "false");
-
-			conf.set("outputGenomics", args[5]);
-			outputPath = args[5];
-			inputPath = args[4];
-			
-			conf.set("indexRoute",args[3]);
-			
-			conf.set("bwathreads", args[2]);
-			
-			if( args[1].equals("paired")){
-				System.out.println("mem paired");
-				
-				conf.set("paired", "true");
-				conf.set("single", "false");
-			}
-			else if( args[1].equals("single")){
-				System.out.println("mem single");
-				
-				conf.set("paired", "false");
-				conf.set("single", "true");
-			}
-		}
-		//Aln algorithm
-		else if(args[0].equals("aln") && (args.length == 5) ){
-
-
+		else if ((!cmd.hasOption("mem")) && (cmd.hasOption("aln")&&(!cmd.hasOption("memthread")))){
+		    // Case of aln algorithm
 			conf.set("mem", "false");
 			conf.set("aln", "true");
-
-			conf.set("indexRoute",args[2]);
+		}
+		else if ((!cmd.hasOption("mem")) && (!cmd.hasOption("aln")&&(cmd.hasOption("memthread")))){
+		    // Case of mem hybrid algorithm
+			conf.set("mem", "false");
+			conf.set("aln", "true");
 			
-			conf.set("outputGenomics", args[4]);
-			outputPath = args[4];
-			inputPath = args[3];
-			
-			if( args[1].equals("paired")){
-				System.out.println("aln paired");
-				
-				conf.set("paired", "true");
-				conf.set("single", "false");
-			}
-			else if( args[1].equals("single")){
-				System.out.println("aln single");
-				
-				conf.set("paired", "false");
-				conf.set("single", "true");
-			}
+			//We need to get the number of threads per map
+			conf.set("bwathreads", cmd.getOptionValue("memthread"));
+		}
+		else{ //No algorithm present, abort.
+			System.err.println("No algorithm has been found. Aborting.");
+			formatter.printHelp( correctUse, options );
+			System.exit(2);
+		}
+		
+		
+		//We look for the index
+		if(cmd.hasOption("index")){
+			conf.set("indexRoute",cmd.getOptionValue("index"));
 		}
 		else{
-			System.out.println("NONe");
+			System.err.println("No index has been found. Aborting.");
+			formatter.printHelp( correctUse, options );
+			System.exit(2);
 		}
-
+		
+		//We look if we want the paired or single algorithm
+		if((cmd.hasOption("paired"))&&(!cmd.hasOption("single"))){
+			conf.set("paired", "true");
+			conf.set("single", "false");
+		}
+		else if((cmd.hasOption("single"))&&(!cmd.hasOption("paired"))){
+			conf.set("paired", "false");
+			conf.set("single", "true");
+		}
+		else{
+			System.err.println("No paired or single has been found. Aborting.");
+			formatter.printHelp( correctUse, options );
+			System.exit(2);
+		}
+		
+		//We look if the user wants to use a reducer or not
+		if(cmd.hasOption("r")){
+			useReducer = true;
+			conf.set("useReducer", "true");
+		}
+		else{
+			conf.set("useReducer", "false");
+		}
+		
+		//Input and output paths
+		String otherArguments[] = cmd.getArgs(); //With this we get the rest of the arguments
+		
+		if(otherArguments.length != 2){
+			System.err.println("No input and output has been found. Aborting.");
+			formatter.printHelp( correctUse, options );
+			System.exit(2);
+		}
+		
+		inputPath = otherArguments[0];
+		outputPath = otherArguments[1];
+		
+		conf.set("outputGenomics",outputPath);
+		
 
 		Job job = new Job(conf,"BigBWA_"+outputPath);
 
@@ -168,15 +212,19 @@ public class BigBWA extends Configured implements Tool {
 		job.setJarByClass(BigBWA.class);
 		job.setMapperClass(BigBWAMap.class);
 		//job.setCombinerClass(BigBWACombiner.class);
-		job.setReducerClass(BigBWAReducer.class);
 		
-		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(Text.class);
+		if(useReducer){
+			job.setReducerClass(BigBWAReducer.class);
+			
+			job.setMapOutputKeyClass(IntWritable.class);
+			job.setMapOutputValueClass(Text.class);
 
-		job.setOutputKeyClass(NullWritable.class);
-		job.setOutputValueClass(Text.class);
+			job.setOutputKeyClass(NullWritable.class);
+			job.setOutputValueClass(Text.class);
 
-		job.setNumReduceTasks(1);
+			job.setNumReduceTasks(1);
+		}
+		
 
 
 		FileInputFormat.addInputPath(job, new Path(inputPath));
@@ -419,7 +467,10 @@ public class BigBWA extends Configured implements Tool {
 					fout.delete();
 					fout2.delete();
 					
-					context.write(new IntWritable(this.identificador), new Text(outputDir+"/Output"+this.identificador+".sam"));
+					if((conf.get("useReducer")!=null)&&(conf.get("useReducer").equals("true"))){
+						context.write(new IntWritable(this.identificador), new Text(outputDir+"/Output"+this.identificador+".sam"));
+					}
+					
 					
 				}
 				//Single algorithms
