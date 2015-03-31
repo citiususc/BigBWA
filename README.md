@@ -50,7 +50,7 @@ This will create the *build* folder, which will contain two main files:
 
 Here it is an example of how to run **BigBWA** with the BWA-MEM paired algorithm. This example assumes that our index is store in all the cluster nodes at */Data/HumanBase/* . The index can be obtained with BWA, using "bwa index".
 
-First, we get the input Fastq reads from the [1000 Genomes Project][3] ftp:
+First, we get the input Fastq reads from the [1000 Genomes Project][3] [ftp site][4] :
 
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/NA12750/sequence_read/ERR000589_1.filt.fastq.gz
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/NA12750/sequence_read/ERR000589_2.filt.fastq.gz
@@ -100,3 +100,4 @@ You need to set correctly your *JAVA_HOME* environment variable or you can set i
 [1]: https://github.com/lh3/bwa
 [2]: https://hadoop.apache.org/
 [3]: http://www.1000genomes.org/
+[4]: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/
