@@ -229,11 +229,14 @@ public class BigBWA extends Configured implements Tool {
 			job.setMapOutputKeyClass(IntWritable.class);
 			job.setMapOutputValueClass(Text.class);
 
-			job.setOutputKeyClass(NullWritable.class);
-			job.setOutputValueClass(Text.class);
-
 			job.setNumReduceTasks(1);
 		}
+		else{
+			job.setNumReduceTasks(0);
+		}
+
+		job.setOutputKeyClass(NullWritable.class);
+		job.setOutputValueClass(Text.class);
 
 
 
@@ -440,7 +443,7 @@ public class BigBWA extends Configured implements Tool {
 						//bwa execution for aln1
 						BwaJni.Bwa_Jni(args);
 
-						LOG.warn("End of first alignment");
+						LOG.info("ALN - End of first alignment");
 						String[] args2 = new String[6];
 
 						args2[0] = "bwa";
@@ -450,7 +453,7 @@ public class BigBWA extends Configured implements Tool {
 						args2[4] = indexRoute;
 						args2[5] = tmpFileString2;
 
-						LOG.warn("begin of second alignment");
+						LOG.info("ALN - Begin of second alignment");
 						for(String newArg: args2){
 							LOG.warn("Arg: "+newArg);
 						}
@@ -470,7 +473,10 @@ public class BigBWA extends Configured implements Tool {
 						args[8] = tmpFileString2;
 
 						//bwa execution of sampe
+						LOG.info("ALN - Begin of sampe");
 						BwaJni.Bwa_Jni(args);
+
+						LOG.info("ALN - End of sampe");
 
 						File tempFile = new File(saiFile1);
 						tempFile.delete();

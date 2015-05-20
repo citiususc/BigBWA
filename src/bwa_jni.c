@@ -74,7 +74,9 @@ JNIEXPORT jint JNICALL Java_BwaJni_bwa_1jni (JNIEnv *env, jobject thisObj, jint 
 		if((strcmp(argvTmp[i],"-f")==0) && (i<(stringCount-1))){
 			getFilename = 1;
 			redirect = 1;
-			mem = 1;
+			if(strcmp(algorithm,"mem")==0){
+				mem = 1;
+			}
 			fprintf(stderr, "[%s] Filename parameter -f found %d '%s'\n",__func__,i, argvTmp[i]);
 		}
         
@@ -133,10 +135,15 @@ JNIEXPORT jint JNICALL Java_BwaJni_bwa_1jni (JNIEnv *env, jobject thisObj, jint 
 	}
 	
 	int ret = main(numArgs,argv);
+	fprintf(stderr, "[%s] Return code from BWA %d.\n", __func__,ret);
 	
-	if((strcmp(algorithm,"mem")!=0)&&(strcmp(algorithm,"sampe")!=0)){
+	//if((strcmp(algorithm,"mem")!=0)&&(strcmp(algorithm,"sampe")!=0)){
+	if(redirect == 1){
+		fflush(stdout);
+		fclose(stdout);
+		
 		FILE *fp2 = fdopen(temp_stdout, "w");
-	
+		
 		stdout = fp2;
 	}
 	
