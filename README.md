@@ -3,7 +3,7 @@ Approaching the Burrows-Wheeler Aligner to Big Data Technologies
 
 # What's BigBWA about? #
 
-**BigBWA** is a tool to run the Burrows-Wheeler Aligner--[BWA][1] on a [Hadooop][2] cluster. The current version of BigBWA (v0.1, march 2015) supports the following BWA algorithms:
+**BigBWA** is a tool to run the Burrows-Wheeler Aligner--[BWA][1] on a [Hadoop][2] cluster. The current version of BigBWA (v0.1, march 2015) supports the following BWA algorithms:
 
 * **BWA-MEM**
 * **BWA-ALN**
@@ -31,7 +31,7 @@ and after the change it should be:
 
 	CFLAGS=		-g -Wall -Wno-unused-function -O2 -fPIC
 
-To build the jar file required to execute on a Hadoop cluster, four hadoop jars are necessary. These jar files can be found inside the "libs" folder. Depending on the Hadoop installation users should use libs/ (for 64 bits) or libs/libs32 (for 32 bits). This can also be configured in *Makefile.common*.
+To build the jar file required to execute on a Hadoop cluster, four hadoop jars are necessary. These jar files can be found inside the "libs" folder. Depending on the Hadoop installation, users should use libs/ (for 64 bits) or libs/libs32 (for 32 bits). This can also be configured in *Makefile.common*.
 
 ## Building
 The default way to build **BigBWA** is:
@@ -73,15 +73,15 @@ Finally, we can execute **BigBWA** on the Hadoop cluster:
 Options:
 * **-mem** - use the BWA-MEM algorithm.
 * **-paired** - the algorithm uses paired reads.
-* **-index** - We specify the index prefix. The index must be available in all the cluster nodes at the same location.
-* **-r** - A reducer will be used.
-* The last two arguments are the input and output in your HDFS.
+* **-index** - the index prefix is specified. The index must be available in all the cluster nodes at the same location.
+* **-r** - a reducer will be used.
+* The last two arguments are the input and output in HDFS.
 
 If you want to check all the available options, execute the command:
 
 	hadoop jar BigBWA.jar
 
-After the execution, to move the output to the local filesystem by typing.
+After the execution, to move the output to the local filesystem use: 
 
 	hdfs dfs -copyToLocal ExitERR000589/part-r-00000 ./
 	
