@@ -146,8 +146,8 @@ public class BigBWA extends Configured implements Tool {
 		}
 		else if ((!cmd.hasOption("mem")) && (!cmd.hasOption("aln"))&&(cmd.hasOption("memthread")) && (!cmd.hasOption("bwasw"))){
 			// Case of mem hybrid algorithm
-			conf.set("mem", "false");
-			conf.set("aln", "true");
+			conf.set("mem", "true");
+			conf.set("aln", "false");
 			conf.set("bwasw","false");
 
 			//We need to get the number of threads per map
@@ -377,7 +377,7 @@ public class BigBWA extends Configured implements Tool {
 
 					
 
-					if(conf.get("bwathreads")!=null && conf.get("bwathreads").equals("")){
+					if(conf.get("bwathreads")!=null && !conf.get("bwathreads").equals("")){
 						args = new String[9];
 
 						args[0] = "bwa";
