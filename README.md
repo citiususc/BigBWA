@@ -11,6 +11,10 @@ Approaching the Burrows-Wheeler Aligner to Big Data Technologies
 
 All of them work with paired and single reads.
 
+If you use **BigBWA**, please, cite this article:
+
+J. M. Abuin, J. C. Pichel, T. F. Pena and J. Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics, 2015.
+
 # Structure #
 In this GitHub repository you can find the following directories:
 
@@ -100,3 +104,4 @@ You need to set correctly your *JAVA_HOME* environment variable or you can set i
 [1]: https://github.com/lh3/bwa
 [2]: https://hadoop.apache.org/
 [3]: http://www.1000genomes.org/
+[4]: http://dx.doi.org/10.1093%2Fbioinformatics%2Fbtv506
