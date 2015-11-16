@@ -27,17 +27,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -68,14 +63,9 @@ public class BigBWA extends Configured implements Tool {
 	public int run(String[] args) throws Exception {
 		Configuration conf = this.getConf();
 
-		String correctUse = "hadoop jar BigBWA.jar -archives bwa.zip <hadoop_options> <-aln|-mem|-memthread> [threads_number] <-paired|-single> <-index index_prefix> <in> <out>";
-
-		/*if (args.length < 3) {
-			System.err.println("Usage: hadoop jar BigBWA.jar -archives bwa.zip <hadoop_options> <aln|mem|memthread> <paired|single> [threads_number] <index_prefix> <in> <out> ");
-			System.exit(2);
-		}*/
+		
 		for(String argumento: args){
-			System.out.println("Arg: "+argumento);
+			LOG.info("Arg: "+argumento);
 		}
 
 		String inputPath = "";
@@ -83,138 +73,106 @@ public class BigBWA extends Configured implements Tool {
 
 		boolean useReducer = false;
 
+		BwaOptions options = new BwaOptions(args);
+		
 		//We set the timeout and stablish the bwa library to call BWA methods
 		conf.set("mapreduce.task.timeout", "0");
 		conf.set("mapreduce.map.env", "LD_LIBRARY_PATH=./bwa.zip/");
 
 
-
-		//Parse arguments
-		Options options = new Options();
-
-		//Algorithm options
-		options.addOption("mem", false, "Enables mem algorithm");
-		options.addOption("aln", false, "Enables aln algorithm");
-		options.addOption("bwasw", false, "Enables bwasw algorithm");
-
-		Option memthread   = OptionBuilder.withArgName( "Threads number" )
-				.hasArg()
-				.withDescription(  "Number of threads used per map" )
-				.create( "memthread" );
-
-
-		options.addOption(memthread);
-
-		//Paired or single
-		options.addOption("paired", false, "Enables mem hybrid algorithm");
-		options.addOption("single", false, "Enables mem hybrid algorithm");
-
-		//Reducer option
-		options.addOption("r",false,"Enables the reducer");
-
-		//Index
-		Option index   = OptionBuilder.withArgName( "Index prefix" )
-				.hasArg()
-				.withDescription(  "Prefix for the index created by bwa to use." )
-				.create( "index" );
-
-
-		options.addOption(index);
-
-		//To print the help
-		HelpFormatter formatter = new HelpFormatter();
-
-
-		//Parse the given arguments
-		CommandLineParser parser = new BasicParser();
-		CommandLine cmd = parser.parse( options, args);
-
-
-		//We look for the algorithm
-		if((cmd.hasOption("mem")) && (!cmd.hasOption("aln"))&&(!cmd.hasOption("memthread")) && (!cmd.hasOption("bwasw"))) {
+		//==================Algorithm election==================
+		//One of the algorithms is going to be in use, because tge default is always specified.
+		if (options.isMemAlgorithm()) {
 			//Case of the mem algorithm
 			conf.set("mem", "true");
 			conf.set("aln", "false");
 			conf.set("bwasw","false");
-
 		}
-		else if ((!cmd.hasOption("mem")) && (cmd.hasOption("aln"))&&(!cmd.hasOption("memthread")) && (!cmd.hasOption("bwasw"))){
+		
+		else if (options.isAlnAlgorithm()) {
 			// Case of aln algorithm
 			conf.set("mem", "false");
 			conf.set("aln", "true");
 			conf.set("bwasw","false");
 		}
-		else if ((!cmd.hasOption("mem")) && (!cmd.hasOption("aln"))&&(cmd.hasOption("memthread")) && (!cmd.hasOption("bwasw"))){
-			// Case of mem hybrid algorithm
-			conf.set("mem", "true");
-			conf.set("aln", "false");
-			conf.set("bwasw","false");
-
-			//We need to get the number of threads per map
-			conf.set("bwathreads", cmd.getOptionValue("memthread"));
-		}
-		else if ((!cmd.hasOption("mem")) && (!cmd.hasOption("aln"))&&(!cmd.hasOption("memthread")) && (cmd.hasOption("bwasw"))){
+		
+		else if (options.isBwaswAlgorithm()) {
 			// Case of bwasw algorithm
 			conf.set("mem", "false");
 			conf.set("aln", "false");
 			conf.set("bwasw","true");
 		}
-		else{ //No algorithm present, abort.
-			System.err.println("No algorithm has been found. Aborting.");
-			formatter.printHelp( correctUse, options );
-			System.exit(2);
-		}
 
-
-		//We look for the index
-		if(cmd.hasOption("index")){
-			conf.set("indexRoute",cmd.getOptionValue("index"));
+		//==================Index election==================
+		if(options.getIndexPath() != ""){
+			conf.set("indexRoute",options.getIndexPath());
 		}
 		else{
 			System.err.println("No index has been found. Aborting.");
-			formatter.printHelp( correctUse, options );
-			System.exit(2);
+			System.exit(1);
 		}
-
-		//We look if we want the paired or single algorithm
-		if((cmd.hasOption("paired"))&&(!cmd.hasOption("single"))){
+		
+		//==================Type of reads election==================
+		//There is always going to be a type of reads, because default is paired
+		if(options.isPairedReads()){
 			conf.set("paired", "true");
 			conf.set("single", "false");
 		}
-		else if((cmd.hasOption("single"))&&(!cmd.hasOption("paired"))){
+		else if(options.isSingleReads()){
 			conf.set("paired", "false");
 			conf.set("single", "true");
 		}
-		else{
-			System.err.println("No paired or single has been found. Aborting.");
-			formatter.printHelp( correctUse, options );
-			System.exit(2);
-		}
-
-		//We look if the user wants to use a reducer or not
-		if(cmd.hasOption("r")){
+		
+		//==================Use of reducer==================
+		if(options.isUseReducer()){
 			useReducer = true;
 			conf.set("useReducer", "true");
 		}
 		else{
 			conf.set("useReducer", "false");
 		}
-
-		//Input and output paths
-		String otherArguments[] = cmd.getArgs(); //With this we get the rest of the arguments
-
-		if(otherArguments.length != 2){
-			System.err.println("No input and output has been found. Aborting.");
-			formatter.printHelp( correctUse, options );
-			System.exit(2);
+		
+		//==================Number of threads per map==================
+		if (options.getNumThreads() != "0"){
+			conf.set("bwathreads", options.getNumThreads());
 		}
-
-		inputPath = otherArguments[0];
-		outputPath = otherArguments[1];
+		
+		
+		//==================Input and output paths==================
+		inputPath = options.getInputPath();
+		outputPath = options.getOutputPath();
 
 		conf.set("outputGenomics",outputPath);
+		
+		//==================Partition number==================
+		if(options.getPartitionNumber() != 0) {
+			try {
+				FileSystem fs = FileSystem.get(conf);
+				
+				Path inputFilePath = new Path(inputPath);
+				
+				ContentSummary cSummary = fs.getContentSummary(inputFilePath);
 
 
+				long length = cSummary.getLength();
+
+
+				fs.close();
+				
+				conf.set("mapreduce.input.fileinputformat.split.maxsize", String.valueOf((length)/options.getPartitionNumber()));
+				conf.set("mapreduce.input.fileinputformat.split.minsize", String.valueOf((length)/options.getPartitionNumber()));
+			}
+			catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				LOG.error(e.toString());
+
+				System.exit(1);;
+			}
+			
+		}
+		
+		
 		Job job = new Job(conf,"BigBWA_"+outputPath);
 
 
@@ -310,7 +268,7 @@ public class BigBWA extends Configured implements Tool {
 
 		} 
 
-		//in the map method, we write the fastq reads to the corresponding local files
+		//In the map method, we write the FASTQ reads to the corresponding local files
 		@Override
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			try{
