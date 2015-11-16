@@ -249,7 +249,7 @@ public class BwaOptions {
 
 		//Algorithm options
 		Option algorithm = new Option("algorithm",true,"Specify the algorithm to use during the alignment");
-		algorithm.setArgName("Algorithm to use during alignment");
+		algorithm.setArgName("mem|aln|bwasw");
 		
 		options.addOption(algorithm);
 		
@@ -261,7 +261,7 @@ public class BwaOptions {
 
 		//Paired or single reads
 		Option reads = new Option("reads",true,"Type of reads to use during alignment");
-		reads.setArgName("Type of reads");
+		reads.setArgName("paired|single");
 		
 		options.addOption(reads);
 
