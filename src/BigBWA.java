@@ -137,6 +137,11 @@ public class BigBWA extends Configured implements Tool {
 			conf.set("bwathreads", options.getNumThreads());
 		}
 		
+		//==================RG Header===================
+		if (options.getReadgroupHeader() != ""){
+			conf.set("rgheader", options.getReadgroupHeader());
+		}
+		
 		
 		//==================Input and output paths==================
 		inputPath = options.getInputPath();
@@ -234,6 +239,8 @@ public class BigBWA extends Configured implements Tool {
 		String tmpDir;
 		String indexRoute;
 
+		String rgheader = "";
+		
 		String outputFileName = "";
 		
 		//In the setup, we create each split local file
@@ -336,6 +343,11 @@ public class BigBWA extends Configured implements Tool {
 
 				bw.close();
 
+				
+				if(conf.get("rgheader")!=null && !conf.get("rgheader").equals("")){
+					this.rgheader = conf.get("rgheader");
+				}
+				
 				String outputDir = context.getConfiguration().get("outputGenomics");
 				
 				//Paired algorithms
@@ -345,35 +357,74 @@ public class BigBWA extends Configured implements Tool {
 					
 
 					if(conf.get("bwathreads")!=null && !conf.get("bwathreads").equals("")){
-						args = new String[9];
+						
+						if(this.rgheader != ""){
+							
+							args = new String[11];
+							
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = "-t";
+							args[5] = conf.get("bwathreads");
+							args[6] = "-R";
+							args[7] = this.rgheader;
+							args[8] = indexRoute;
+							args[9] = tmpFileString;
+							args[10] = tmpFileString2;
+						}
+						
+						else{
+							args = new String[9];
 
-						args[0] = "bwa";
-						args[1] = "mem";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = "-t";
-						args[5] = conf.get("bwathreads");
-						args[6] = indexRoute;
-						args[7] = tmpFileString;
-						args[8] = tmpFileString2;
-
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = "-t";
+							args[5] = conf.get("bwathreads");
+							args[6] = indexRoute;
+							args[7] = tmpFileString;
+							args[8] = tmpFileString2;
+						}
+						
 						outputFileName = args[3];
 
 						//bwa execution
 						BwaJni.Bwa_Jni(args);
 					}
 					else if((conf.get("mem")!=null)&&(conf.get("mem").equals("true"))){
-						args = new String[7];
+						
+						if(this.rgheader != ""){
+							args = new String[9];
 
-						args[0] = "bwa";
-						args[1] = "mem";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = tmpFileString;
-						args[6] = tmpFileString2;
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = "-R";
+							args[5] = this.rgheader;
+							args[6] = indexRoute;
+							args[7] = tmpFileString;
+							args[8] = tmpFileString2;
+						}
+						
+						else{
+							args = new String[7];
 
-						outputFileName = args[3];
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = indexRoute;
+							args[5] = tmpFileString;
+							args[6] = tmpFileString2;
+
+							outputFileName = args[3];
+						}
+						
+						
 
 						//bwa execution
 						BwaJni.Bwa_Jni(args);
@@ -428,16 +479,35 @@ public class BigBWA extends Configured implements Tool {
 						//bwa execution for aln2
 						BwaJni.Bwa_Jni(args2);
 
-						args = new String[9];
-						args[0] = "bwa";
-						args[1] = "sampe";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = saiFile1;
-						args[6] = saiFile2;
-						args[7] = tmpFileString;
-						args[8] = tmpFileString2;
+						//Sampe
+						if(this.rgheader!=""){
+							args = new String[11];
+							args[0] = "bwa";
+							args[1] = "sampe";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = indexRoute;
+							args[5] = "-r";
+							args[6] = this.rgheader;
+							args[7] = saiFile1;
+							args[8] = saiFile2;
+							args[9] = tmpFileString;
+							args[10] = tmpFileString2;
+						}
+						else{
+							args = new String[9];
+							args[0] = "bwa";
+							args[1] = "sampe";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = indexRoute;
+							args[5] = saiFile1;
+							args[6] = saiFile2;
+							args[7] = tmpFileString;
+							args[8] = tmpFileString2;
+						}
+						
+						
 
 						outputFileName = args[3];
 						
