@@ -15,6 +15,8 @@ If you use **BigBWA**, please cite this article:
 
 José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics, 31(24), pp. 4003-4005, 2015.
 
+Also, a version for [Spark][6] is available [here](https://github.com/citiususc/SparkBWA).
+
 # Structure #
 In this GitHub repository you can find the following directories:
 
@@ -105,3 +107,4 @@ You need to set correctly your *JAVA_HOME* environment variable or you can set i
 [2]: https://hadoop.apache.org/
 [3]: http://www.1000genomes.org/
 [4]: http://dx.doi.org/10.1093%2Fbioinformatics%2Fbtv506
+[6]: http://spark.apache.org/
