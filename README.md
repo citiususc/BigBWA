@@ -11,9 +11,11 @@ Approaching the Burrows-Wheeler Aligner to Big Data Technologies
 
 All of them work with paired and single reads.
 
-If you use **BigBWA**, please, cite this article:
+If you use **BigBWA**, please cite this article:
 
-J. M. Abuin, J. C. Pichel, T. F. Pena and J. Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics, 2015.
+José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics, 31(24), pp. 4003-4005, 2015.
+
+Also, a version for [Apache Spark][6] is available [here][7].
 
 # Structure #
 In this GitHub repository you can find the following directories:
@@ -47,12 +49,12 @@ The default way to build **BigBWA** is:
 This will create the *build* folder, which will contain two main files:
 
 * **BigBWA.jar** - Jar file to launch with Hadoop.
-* **bwa.zip** - File with the BWA library needed to execute with Hadoop. It needs to be uploaded to the Hadoop distributed cache.
+* **bwa.zip** - BWA library needed to execute together with Hadoop. It has to be uploaded to the Hadoop distributed cache.
 
 ## Running BigBWA ##
 **BigBWA** requires a working Hadoop cluster. Users should take into account that at least 9 GB of free memory per map are required (each map loads into memory the bwa index). Note that **BigBWA** uses disk space in the Hadoop tmp directory.
 
-Here it is an example of how to run **BigBWA** with the BWA-MEM paired algorithm. This example assumes that our index is store in all the cluster nodes at */Data/HumanBase/* . The index can be obtained with BWA, using "bwa index".
+Here it is an example of how to run **BigBWA** using the BWA-MEM paired algorithm. This example assumes that our index is stored in all the cluster nodes at */Data/HumanBase/* . The index can be obtained with BWA, using "bwa index".
 
 First, we get the input Fastq reads from the [1000 Genomes Project][3] ftp:
 
@@ -89,7 +91,7 @@ After the execution, to move the output to the local filesystem use:
 
 	hdfs dfs -copyToLocal ExitERR000589/part-r-00000 ./
 	
-In case of not using a reducer, the output will be splited into several pieces. If we want to put it together we can use one of our Python utils or use "samtools merge":
+In case there is no reducer, the output will be split into several pieces. In order to put it together users could use one of our Python utils or "samtools merge":
 
 	hdfs dfs -copyToLocal ExitERR000589/Output* ./
 	python src/utils/FullSam.py ./ ./OutputFile.sam
@@ -105,3 +107,5 @@ You need to set correctly your *JAVA_HOME* environment variable or you can set i
 [2]: https://hadoop.apache.org/
 [3]: http://www.1000genomes.org/
 [4]: http://dx.doi.org/10.1093%2Fbioinformatics%2Fbtv506
+[6]: http://spark.apache.org/
+[7]: https://github.com/citiususc/SparkBWA

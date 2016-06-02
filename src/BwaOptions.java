@@ -62,8 +62,9 @@ public class BwaOptions {
 	private boolean sortFastqReads		= false;
 	private boolean sortFastqReadsHdfs	= false;
 
+	private String readgroupHeader		= "";
 
-	private String correctUse 			= "hadoop jar BigBWA.jar -archives bwa.zip <hadoop_options> [-algorithm <mem|aln|bwasw>] [-threads <threads_number>] [-reads <paired|single>] -index >index_prefix> <in> <out>\n"
+	private String correctUse 			= "hadoop jar BigBWA.jar -archives bwa.zip <hadoop_options> [-algorithm <mem|aln|bwasw>] [-threads <threads_number>] [-reads <paired|single>] [-rg <header>] -index >index_prefix> <in> <out>\n"
 										+ "\n\n"
 										//+ "To set the Input.fastq - setInputPath(string)\n"
 										//+ "To set the Input2.fastq - setInputPath2(string)\n"
@@ -202,6 +203,15 @@ public class BwaOptions {
 				useReducer = false;
 			}
 
+			
+			//RG option
+			if(cmd.hasOption("rg")){
+				this.readgroupHeader = cmd.getOptionValue("rg");
+			}
+			else{
+				this.readgroupHeader = "";
+			}
+			
 			//Input and output paths
 			String otherArguments[] = cmd.getArgs(); //With this we get the rest of the arguments
 
@@ -284,6 +294,12 @@ public class BwaOptions {
 
 		options.addOption(partitions);
 
+		
+		Option RGHeader = new Option("rg", true, "Read group header line");
+		RGHeader.setArgName("Read group header line");
+		
+		options.addOption(RGHeader);
+		
 		return options;
 	}
 
@@ -453,6 +469,16 @@ public class BwaOptions {
 
 	public void setSortFastqReadsHdfs(boolean sortFastqReadsHdfs) {
 		this.sortFastqReadsHdfs = sortFastqReadsHdfs;
+	}
+
+
+	public String getReadgroupHeader() {
+		return readgroupHeader;
+	}
+
+
+	public void setReadgroupHeader(String readgroupHeader) {
+		this.readgroupHeader = readgroupHeader;
 	}
 }
 

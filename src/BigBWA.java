@@ -137,6 +137,11 @@ public class BigBWA extends Configured implements Tool {
 			conf.set("bwathreads", options.getNumThreads());
 		}
 		
+		//==================RG Header===================
+		if (options.getReadgroupHeader() != ""){
+			conf.set("rgheader", options.getReadgroupHeader());
+		}
+		
 		
 		//==================Input and output paths==================
 		inputPath = options.getInputPath();
@@ -173,10 +178,10 @@ public class BigBWA extends Configured implements Tool {
 		}
 		
 		
-		Job job = new Job(conf,"BigBWA_"+outputPath);
-
-
-
+		//Job job = new Job(conf,"BigBWA_"+outputPath);
+		Job job = Job.getInstance(conf,"BigBWA_"+outputPath);
+		
+		
 		job.setJarByClass(BigBWA.class);
 		job.setMapperClass(BigBWAMap.class);
 		//job.setCombinerClass(BigBWACombiner.class);
@@ -201,6 +206,7 @@ public class BigBWA extends Configured implements Tool {
 		FileInputFormat.addInputPath(job, new Path(inputPath));
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
+		
 		return(job.waitForCompletion(true) ? 0 : 1);
 	}
 
@@ -212,11 +218,17 @@ public class BigBWA extends Configured implements Tool {
 		FileOutputStream fos;
 		BufferedWriter bw;
 		int identificador;
-		String tmpFileString;
+		
+		String tmpFileString = "";
 		int jobID;
 
-		String tmpFileString2;
+		String tmpFileString2 = "";
 		File fout2;
+		
+		//SAI files
+		String saiFile1 = "";
+		String saiFile2 = "";
+		
 		FileOutputStream fos2;
 		BufferedWriter bw2;
 
@@ -227,6 +239,10 @@ public class BigBWA extends Configured implements Tool {
 		String tmpDir;
 		String indexRoute;
 
+		String rgheader = "";
+		
+		String outputFileName = "";
+		
 		//In the setup, we create each split local file
 		@Override
 		protected void setup(Context context) {
@@ -236,7 +252,7 @@ public class BigBWA extends Configured implements Tool {
 
 			Configuration conf = context.getConfiguration();
 
-			tmpDir = conf.get("hadoop.tmp.dir");
+			tmpDir = conf.get("hadoop.tmp.dir","/tmp/");
 			indexRoute = conf.get("indexRoute");
 
 			tmpFileString = tmpDir+"/HadoopTMPFile-"+identificador+"-"+String.valueOf(jobID);
@@ -323,10 +339,15 @@ public class BigBWA extends Configured implements Tool {
 
 				Configuration conf = context.getConfiguration();
 				String[] args;
-				String outputFileName = "";
+				
 
 				bw.close();
 
+				
+				if(conf.get("rgheader")!=null && !conf.get("rgheader").equals("")){
+					this.rgheader = conf.get("rgheader");
+				}
+				
 				String outputDir = context.getConfiguration().get("outputGenomics");
 				
 				//Paired algorithms
@@ -336,35 +357,74 @@ public class BigBWA extends Configured implements Tool {
 					
 
 					if(conf.get("bwathreads")!=null && !conf.get("bwathreads").equals("")){
-						args = new String[9];
+						
+						if(this.rgheader != ""){
+							
+							args = new String[11];
+							
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = "-t";
+							args[5] = conf.get("bwathreads");
+							args[6] = "-R";
+							args[7] = this.rgheader;
+							args[8] = indexRoute;
+							args[9] = tmpFileString;
+							args[10] = tmpFileString2;
+						}
+						
+						else{
+							args = new String[9];
 
-						args[0] = "bwa";
-						args[1] = "mem";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = "-t";
-						args[5] = conf.get("bwathreads");
-						args[6] = indexRoute;
-						args[7] = tmpFileString;
-						args[8] = tmpFileString2;
-
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = "-t";
+							args[5] = conf.get("bwathreads");
+							args[6] = indexRoute;
+							args[7] = tmpFileString;
+							args[8] = tmpFileString2;
+						}
+						
 						outputFileName = args[3];
 
 						//bwa execution
 						BwaJni.Bwa_Jni(args);
 					}
 					else if((conf.get("mem")!=null)&&(conf.get("mem").equals("true"))){
-						args = new String[7];
+						
+						if(this.rgheader != ""){
+							args = new String[9];
 
-						args[0] = "bwa";
-						args[1] = "mem";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = tmpFileString;
-						args[6] = tmpFileString2;
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = "-R";
+							args[5] = this.rgheader;
+							args[6] = indexRoute;
+							args[7] = tmpFileString;
+							args[8] = tmpFileString2;
+						}
+						
+						else{
+							args = new String[7];
 
-						outputFileName = args[3];
+							args[0] = "bwa";
+							args[1] = "mem";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = indexRoute;
+							args[5] = tmpFileString;
+							args[6] = tmpFileString2;
+
+							outputFileName = args[3];
+						}
+						
+						
 
 						//bwa execution
 						BwaJni.Bwa_Jni(args);
@@ -388,8 +448,8 @@ public class BigBWA extends Configured implements Tool {
 					else if((conf.get("aln")!=null)&&(conf.get("aln").equals("true"))){
 						args = new String[6];
 
-						String saiFile1 = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sai";
-						String saiFile2 = tmpDir+"/Output"+this.identificador+"-2-"+String.valueOf(jobID)+".sai";
+						this.saiFile1 = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sai";
+						this.saiFile2 = tmpDir+"/Output"+this.identificador+"-2-"+String.valueOf(jobID)+".sai";
 
 						args[0] = "bwa";
 						args[1] = "aln";
@@ -419,17 +479,38 @@ public class BigBWA extends Configured implements Tool {
 						//bwa execution for aln2
 						BwaJni.Bwa_Jni(args2);
 
-						args = new String[9];
-						args[0] = "bwa";
-						args[1] = "sampe";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = saiFile1;
-						args[6] = saiFile2;
-						args[7] = tmpFileString;
-						args[8] = tmpFileString2;
+						//Sampe
+						if(this.rgheader!=""){
+							args = new String[11];
+							args[0] = "bwa";
+							args[1] = "sampe";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = indexRoute;
+							args[5] = "-r";
+							args[6] = this.rgheader;
+							args[7] = saiFile1;
+							args[8] = saiFile2;
+							args[9] = tmpFileString;
+							args[10] = tmpFileString2;
+						}
+						else{
+							args = new String[9];
+							args[0] = "bwa";
+							args[1] = "sampe";
+							args[2] = "-f";
+							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
+							args[4] = indexRoute;
+							args[5] = saiFile1;
+							args[6] = saiFile2;
+							args[7] = tmpFileString;
+							args[8] = tmpFileString2;
+						}
+						
+						
 
+						outputFileName = args[3];
+						
 						//bwa execution of sampe
 						LOG.info("ALN - Begin of sampe");
 						BwaJni.Bwa_Jni(args);
@@ -442,7 +523,7 @@ public class BigBWA extends Configured implements Tool {
 						tempFile = new File(saiFile2);
 						tempFile.delete();
 
-						outputFileName = args[3];
+						
 
 					}
 
@@ -503,6 +584,8 @@ public class BigBWA extends Configured implements Tool {
 						args[4] = indexRoute;
 						args[5] = tmpFileString;
 
+						this.outputFileName = args[3];
+						
 						//bwa execution
 						BwaJni.Bwa_Jni(args);
 
@@ -541,14 +624,15 @@ public class BigBWA extends Configured implements Tool {
 						args[5] = saiFile;
 						args[6] = tmpFileString;
 
-
+						this.outputFileName = args[3];
+						
 						//bwa execution of sampe
 						BwaJni.Bwa_Jni(args);
 
 						File tempFile = new File(saiFile);
 						tempFile.delete();
 
-						outputFileName = args[3];
+						
 						
 						//We copy the results to HDFS and delete tmp files from local filesystem
 						//String outputDir = context.getConfiguration().get("outputGenomics");
@@ -570,9 +654,35 @@ public class BigBWA extends Configured implements Tool {
 
 				}
 
-			} catch (IOException e) {
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				
+				//Clean temporary files
+				
+				//FASTQ splits
+				this.fout.delete();
+				this.fout2.delete();
+				
+				//SAI outputs
+				if(!this.saiFile1.isEmpty()){
+					File tempFile = new File(this.saiFile1);
+					tempFile.delete();
+				}
+				
+				if(!this.saiFile2.isEmpty()){
+					File tempFile = new File(this.saiFile2);
+					tempFile.delete();
+				}
+
+				//SAM Output
+				if(!this.outputFileName.isEmpty()){
+					File tempFile = new File(this.outputFileName);
+					tempFile.delete();
+				}
+				
+
+				
 			}
 
 		}
@@ -582,15 +692,15 @@ public class BigBWA extends Configured implements Tool {
 
 	public static class BigBWAReducer extends Reducer<IntWritable,Text,NullWritable,Text> {
 
-		private String outputFile;
-		private String outputDir;
+		//private String outputFile;
+		//private String outputDir;
 		private HashMap<Integer,String> inputFiles;
 
 		@Override
 		protected void setup(Context context) {
 
-			this.outputDir = context.getConfiguration().get("outputGenomics");
-			this.outputFile = this.outputDir+"/FinalOutput.sam";
+			//this.outputDir = context.getConfiguration().get("outputGenomics");
+			//this.outputFile = this.outputDir+"/FinalOutput.sam";
 
 			this.inputFiles = new HashMap<Integer,String>();
 
