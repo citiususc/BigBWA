@@ -253,6 +253,11 @@ public class BigBWA extends Configured implements Tool {
 			Configuration conf = context.getConfiguration();
 
 			tmpDir = conf.get("hadoop.tmp.dir","/tmp/");
+			
+			if(tmpDir == null || tmpDir.isEmpty()) {
+				tmpDir = "/tmp/";
+			}
+			
 			indexRoute = conf.get("indexRoute");
 
 			tmpFileString = tmpDir+"/HadoopTMPFile-"+identificador+"-"+String.valueOf(jobID);
