@@ -414,6 +414,8 @@ public class BigBWA extends Configured implements Tool {
 							args[6] = indexRoute;
 							args[7] = tmpFileString;
 							args[8] = tmpFileString2;
+							
+							outputFileName = args[3];
 						}
 						
 						else{
