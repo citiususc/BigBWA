@@ -172,7 +172,7 @@ public class BigBWA extends Configured implements Tool {
 				e.printStackTrace();
 				LOG.error(e.toString());
 
-				System.exit(1);;
+				System.exit(1);
 			}
 			
 		}
@@ -266,7 +266,8 @@ public class BigBWA extends Configured implements Tool {
 			try {
 				fos = new FileOutputStream(fout);
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
+				
+				LOG.error(e.toString());
 				e.printStackTrace();
 			}
 
