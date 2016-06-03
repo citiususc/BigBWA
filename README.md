@@ -74,7 +74,7 @@ and prepared to be used by BigBWA:
 	
 Finally, we can execute **BigBWA** on the Hadoop cluster:
 
-	hadoop jar BigBWA.jar -archives bwa.zip -D mapreduce.input.fileinputformat.split.minsize=123641127 -D mapreduce.input.fileinputformat.split.maxsize=123641127 -mem -paired -index /Data/HumanBase/hg19 -r ERR000589.fqBDP ExitERR000589
+	hadoop jar BigBWA.jar -archives bwa.zip -D mapreduce.input.fileinputformat.split.minsize=123641127 -D mapreduce.input.fileinputformat.split.maxsize=123641127 -algorithm mem -reads paired -index /Data/HumanBase/hg19 -r ERR000589.fqBDP ExitERR000589
 
 Options:
 * **-algorithm \<mem|aln|bwasw\>** - the algorithm to use during alignment.
