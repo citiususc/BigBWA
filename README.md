@@ -75,7 +75,7 @@ Finally, we can execute **BigBWA** on the Hadoop cluster:
 
 Options:
 * **-algorithm \<mem|aln|bwasw\>** - alignment algorithm (BWA-MEM, BWA-backtrack, BWA-SW).
-* **-reads \<paired|single\>** - use single or paired-end read.
+* **-reads \<paired|single\>** - use single or paired-end reads.
 * **-index** - the index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * **-r** - add a reducer phase to gather all the partial results in just one output file.
 * The last two arguments are the input and output files in HDFS.
