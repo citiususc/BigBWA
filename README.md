@@ -74,7 +74,7 @@ Finally, we can execute **BigBWA** on the Hadoop cluster:
 	hadoop jar BigBWA.jar -archives bwa.zip -D mapreduce.input.fileinputformat.split.minsize=123641127 -D mapreduce.input.fileinputformat.split.maxsize=123641127 -algorithm mem -reads paired -index /Data/HumanBase/hg19 -r ERR000589.fqBDP ExitERR000589
 
 Options:
-* **-algorithm \<mem|aln|bwasw\>** - the algorithm to use during alignment.
+* **-algorithm \<mem|aln|bwasw\>** - alignment algorithm (BWA-MEM, BWA-backtrack, BWA-SW).
 * **-reads \<paired|single\>** - use single or paired-end read.
 * **-index** - the index prefix is specified. The index must be available in all the cluster nodes at the same location.
 * **-r** - add a reducer phase to gather all the partial results in just one output file.
