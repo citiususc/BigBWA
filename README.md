@@ -1,21 +1,18 @@
-# BigBWA
-Approaching the Burrows-Wheeler Aligner to Big Data Technologies
-
 # What's BigBWA about? #
 
 **BigBWA** is a tool to run the Burrows-Wheeler Aligner--[BWA][1] on a [Hadoop][2] cluster. The current version of BigBWA (v0.1, march 2015) supports the following BWA algorithms:
 
 * **BWA-MEM**
-* **BWA-ALN**
+* **BWA-backtrack**
 * **BWA-SW**
 
-All of them work with paired and single reads.
+All of them work with paired and single-end reads.
 
 If you use **BigBWA**, please cite this article:
 
-José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics, 31(24), pp. 4003-4005, 2015.
+José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics 31(24), pp. 4003-4005, 2015.
 
-Also, a version for [Apache Spark][6] is available [here][7].
+A version for [Apache Spark][6] is available [here][7].
 
 # Structure #
 In this GitHub repository you can find the following directories:
@@ -78,10 +75,10 @@ Finally, we can execute **BigBWA** on the Hadoop cluster:
 
 Options:
 * **-algorithm \<mem|aln|bwasw\>** - the algorithm to use during alignment.
-* **-reads \<paired|single\>** - the algorithm uses paired or single reads.
+* **-reads \<paired|single\>** - use single or paired-end read.
 * **-index** - the index prefix is specified. The index must be available in all the cluster nodes at the same location.
-* **-r** - a reducer will be used.
-* The last two arguments are the input and output in HDFS.
+* **-r** - add a reducer phase to gather all the partial results in just one output file.
+* The last two arguments are the input and output files in HDFS.
 
 If you want to check all the available options, execute the command:
 
