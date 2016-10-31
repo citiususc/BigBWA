@@ -1,0 +1,9 @@
+target
+*.o
+*.a
+*.sw*
+*.class
+.idea
+BigBWA.iml
+src/main/resources/libbwa.so
+dependency-reduced-pom.xml
