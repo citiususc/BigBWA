@@ -44,7 +44,7 @@ The default way to build **BigBWA** is:
 		
 This will create the *target* folder, which will contain the *jar* file needed to run **BigBWA**:
 
-* **BigBWA-2.0.jar** - jar file to launch with Hadoop.
+* **BigBWA-2.1.jar** - jar file to launch with Hadoop.
 
 ## Configuring
 Since version 2.0 there is no need of configuring any Hadoop parameter. The only requirement is that the YARN containers need to have at least 7500MB of memory available (for the human genome case).
