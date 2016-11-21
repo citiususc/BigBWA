@@ -1,6 +1,7 @@
 # What's BigBWA about? #
 
-**BigBWA** is a tool to run the Burrows-Wheeler Aligner--[BWA][1] on a [Hadoop][2] cluster. The current version of BigBWA (2.0, october 2016) supports the following BWA algorithms:
+**BigBWA** is a tool to run the Burrows-Wheeler Aligner--[BWA][1] on a [Hadoop][2] cluster. The current version of BigBWA (2.1, november 2016) supports the following BWA algorithms:
+
 
 * **BWA-MEM**
 * **BWA-backtrack**
@@ -44,7 +45,7 @@ The default way to build **BigBWA** is:
 		
 This will create the *target* folder, which will contain the *jar* file needed to run **BigBWA**:
 
-* **BigBWA-2.0.jar** - jar file to launch with Hadoop.
+* **BigBWA-2.1.jar** - jar file to launch with Hadoop.
 
 ## Configuring
 Since version 2.0 there is no need of configuring any Hadoop parameter. The only requirement is that the YARN containers need to have at least 7500MB of memory available (for the human genome case).
@@ -72,21 +73,55 @@ and prepared to be used by BigBWA:
 	
 Finally, we can execute **BigBWA** on the Hadoop cluster:
 
-	yarn jar BigBWA.jar -D mapreduce.input.fileinputformat.split.minsize=123641127
+	yarn jar BigBWA-2.1.jar com.github.bigbwa.BigBWA -D mapreduce.input.fileinputformat.split.minsize=123641127
 	-D mapreduce.input.fileinputformat.split.maxsize=123641127
 	-D mapreduce.map.memory.mb=7500
-	-algorithm mem -reads paired -index /Data/HumanBase/hg19 -r ERR000589.fqBDP ExitERR000589
+	-w "-R @RG\tID:foo\tLB:bar\tPL:illumina\tPU:illumina\tSM:ERR000589 -t 2"
+	-m -p --index /Data/HumanBase/hg19 -r ERR000589.fqBDP ExitERR000589
 
 Options:
-* **-algorithm \<mem|aln|bwasw\>** - alignment algorithm (BWA-MEM, BWA-backtrack, BWA-SW).
-* **-reads \<paired|single\>** - use single or paired-end reads.
-* **-index** - the index prefix is specified. The index must be available in all the cluster nodes at the same location.
-* **-r** - add a reducer phase to gather all the partial results in just one output file.
-* The last two arguments are the input and output files in HDFS.
+
+* **-m** - Sequence alignment algorithm.
+* **-p** - Use paired-end reads.
+* **-w "args"** - Can be used to pass arguments directly to BWA (ex. "-t 4" to specify the amount of threads to use per instance of BWA).
+* **--index index_prefix** - Index prefix is specified. The index must be available in all the cluster nodes at the same location.
+* The last two arguments are the input and output HDFS files.
+
 
 If you want to check all the available options, execute the command:
 
-	yarn jar BigBWA.jar
+	yarn jar BigBWA-2.1.jar com.github.bigbwa.BigBWA -h
+	
+The commands are:
+
+    BigBWA performs genomic alignment using bwa in a Hadoop/YARN cluster
+     usage: yarn jar --class com.github.bigbwa.BigBWA BigBWA-2.1.jar
+           [-a | -b | -m] [-h] [-i <Index prefix>]   [-n <Number of
+           partitions>] [-p | -s] [-r]  [-w <"BWA arguments">]
+           <FASTQ file> <SAM file output>
+    Help options: 
+      -h, --help                                       Shows this help
+    
+    Input FASTQ reads options: 
+      -p, --paired                                     Paired reads will be used as input FASTQ reads
+      -s, --single                                     Single reads will be used as input FASTQ reads
+    
+    BWA algorithm options: 
+      -a, --aln                                        The ALN algorithm will be used
+      -b, --bwasw                                      The bwasw algorithm will be used
+      -m, --mem                                        The MEM algorithm will be used
+    
+    Index options: 
+      -i, --index <Index prefix>                       Prefix for the index created by bwa to use - setIndexPath(string)
+    
+    Spark options: 
+      -n, --partitions <Number of partitions>          Number of partitions to divide input - setPartitionNumber(int)
+    
+    Reducer options: 
+      -r, --reducer                                    The program is going to merge all the final results in a reducer phase
+    
+    BWA arguments options: 
+      -w, --bwa <"BWA arguments">                      Arguments passed directly to BWA
 
 After the execution, to move the output to the local filesystem use: 
 

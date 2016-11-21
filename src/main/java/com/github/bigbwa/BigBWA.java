@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 
@@ -55,7 +56,7 @@ public class BigBWA extends Configured implements Tool {
 	private static final Log LOG = LogFactory.getLog(BigBWA.class);
 
 	public static void main(String[] args) throws Exception {
-		// TODO Auto-generated method stub
+
 		int res = ToolRunner.run(new Configuration(), new BigBWA(), args);
 		System.exit(res);
 
@@ -77,7 +78,7 @@ public class BigBWA extends Configured implements Tool {
 
 		BwaOptions options = new BwaOptions(args);
 		
-		//We set the timeout and stablish the bwa library to call BWA methods
+		//We set the timeout and set the bwa library to call BWA methods
 		conf.set("mapreduce.task.timeout", "0");
 		conf.set("mapreduce.map.env", "LD_LIBRARY_PATH=./bwa.zip/");
 
@@ -106,7 +107,7 @@ public class BigBWA extends Configured implements Tool {
 		}
 
 		//==================Index election==================
-		if(options.getIndexPath() != ""){
+		if(!options.getIndexPath().equals("")){
 			conf.set("indexRoute",options.getIndexPath());
 		}
 		else{
@@ -126,23 +127,28 @@ public class BigBWA extends Configured implements Tool {
 		}
 		
 		//==================Use of reducer==================
-		if(options.isUseReducer()){
+		if(options.getUseReducer()){
 			useReducer = true;
 			conf.set("useReducer", "true");
 		}
 		else{
 			conf.set("useReducer", "false");
 		}
-		
-		//==================Number of threads per map==================
-		if (options.getNumThreads() != "0"){
-			conf.set("bwathreads", options.getNumThreads());
+
+		//=================Number of threads and RG are changed by bwa options======================
+		if(!options.getBwaArgs().isEmpty()) {
+			conf.set("bwaArgs",options.getBwaArgs());
 		}
+
+		//==================Number of threads per map==================
+		//if (options.getNumThreads() != "0"){
+		//	conf.set("bwathreads", options.getNumThreads());
+		//}
 		
 		//==================RG Header===================
-		if (options.getReadgroupHeader() != ""){
-			conf.set("rgheader", options.getReadgroupHeader());
-		}
+		//if (options.getReadgroupHeader() != ""){
+		//	conf.set("rgheader", options.getReadgroupHeader());
+		//}
 		
 		
 		//==================Input and output paths==================
@@ -170,7 +176,7 @@ public class BigBWA extends Configured implements Tool {
 				conf.set("mapreduce.input.fileinputformat.split.minsize", String.valueOf((length)/options.getPartitionNumber()));
 			}
 			catch (IOException e) {
-				// TODO Auto-generated catch block
+
 				e.printStackTrace();
 				LOG.error(e.toString());
 
@@ -241,10 +247,19 @@ public class BigBWA extends Configured implements Tool {
 		String tmpDir;
 		String indexRoute;
 
-		String rgheader = "";
+		String bwaArgs = "";
 		
 		String outputFileName = "";
-		
+
+		String outputDir = "";
+
+		boolean memAlgorithm = false;
+		boolean alnAlgorithm = false;
+		boolean bwaswAlgorithm = false;
+
+		boolean pairedReads = false;
+		boolean singleReads = false;
+
 		//In the setup, we create each split local file
 		@Override
 		protected void setup(Context context) {
@@ -256,10 +271,22 @@ public class BigBWA extends Configured implements Tool {
 
 			tmpDir = conf.get("hadoop.tmp.dir","/tmp/");
 
+			if((conf.get("mem")!=null)&&(conf.get("mem").equals("true"))) {
+				this.memAlgorithm = true;
+			}
+			else if((conf.get("aln")!=null)&&(conf.get("aln").equals("true"))) {
+				this.alnAlgorithm = true;
+			}
+			else if((conf.get("bwasw")!=null)&&(conf.get("bwasw").equals("true"))){
+				this.bwaswAlgorithm = true;
+			}
+
+			this.outputDir = conf.get("outputGenomics");
+
 			File tmpFile = new File(tmpDir);
 
 			if(tmpDir == null || tmpDir.isEmpty() || !tmpFile.isDirectory() || !tmpFile.canWrite()) {
-				tmpDir = "/tmp/";
+				tmpDir = "/tmp";
 			}
 
 			indexRoute = conf.get("indexRoute");
@@ -279,18 +306,29 @@ public class BigBWA extends Configured implements Tool {
 
 
 			if((conf.get("paired").equals("true"))){
+
+				this.pairedReads = true;
+
 				tmpFileString2 = tmpDir+"/HadoopTMPFile-"+identificador+"_2"+"-"+String.valueOf(jobID);
 				fout2 = new File(tmpFileString2);
 
 				try {
 					fos2 = new FileOutputStream(fout2);
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
 				bw2 = new BufferedWriter(new OutputStreamWriter(fos2));
 			}
+			else if((conf.get("single").equals("true"))){
+				this.singleReads = true;
+			}
+
+			if((conf.get("bwaArgs")!=null) && (!conf.get("bwaArgs").equals(""))) {
+				this.bwaArgs = conf.get("bwaArgs");
+			}
+
+			this.outputFileName = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
 
 		} 
 
@@ -299,14 +337,14 @@ public class BigBWA extends Configured implements Tool {
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			try{
 
-				Configuration conf = context.getConfiguration();
+				//Configuration conf = context.getConfiguration();
 
-				if((conf.get("paired").equals("true"))){
+				if(this.pairedReads){
 
 					initValues = value.toString().split("<part>");
 
-					values1 = initValues[0].toString().split("<sep>");
-					values2 = initValues[1].toString().split("<sep>");
+					values1 = initValues[0].split("<sep>");
+					values2 = initValues[1].split("<sep>");
 
 					for(String newValue: values1){
 						bw.write(newValue);
@@ -348,323 +386,64 @@ public class BigBWA extends Configured implements Tool {
 			try {
 
 				Configuration conf = context.getConfiguration();
-				String[] args;
-				
 
+				//bw.flush();
 				bw.close();
 
-				
-				if(conf.get("rgheader")!=null && !conf.get("rgheader").equals("")){
-					this.rgheader = conf.get("rgheader");
-				}
-				
-				String outputDir = context.getConfiguration().get("outputGenomics");
-				
-				//Paired algorithms
-				if((conf.get("paired").equals("true"))){
+				if(this.pairedReads) {
+					//bw2.flush();
 					bw2.close();
+				}
 
-					
+				this.run(0);
 
-					if(conf.get("bwathreads")!=null && !conf.get("bwathreads").equals("")){
-						
-						if(this.rgheader != ""){
-							
-							args = new String[11];
-							
-							args[0] = "bwa";
-							args[1] = "mem";
-							args[2] = "-f";
-							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-							args[4] = "-t";
-							args[5] = conf.get("bwathreads");
-							args[6] = "-R";
-							args[7] = this.rgheader;
-							args[8] = indexRoute;
-							args[9] = tmpFileString;
-							args[10] = tmpFileString2;
-						}
-						
-						else{
-							args = new String[9];
+				//In case of the ALN algorithm, more executions of BWA are needed
+				if (this.alnAlgorithm) {
 
-							args[0] = "bwa";
-							args[1] = "mem";
-							args[2] = "-f";
-							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-							args[4] = "-t";
-							args[5] = conf.get("bwathreads");
-							args[6] = indexRoute;
-							args[7] = tmpFileString;
-							args[8] = tmpFileString2;
-						}
-						
-						outputFileName = args[3];
+					this.saiFile1 = tmpFileString + ".sai";
+					//The next execution of BWA in the case of ALN algorithm
+					this.run(1);
 
-						//bwa execution
-						BwaJni.Bwa_Jni(args);
-					}
-					else if((conf.get("mem")!=null)&&(conf.get("mem").equals("true"))){
-						
-						if(this.rgheader != ""){
-							args = new String[9];
+					//Finally, if we are talking about paired reads and aln algorithm, a final execution is needed
+					if (this.pairedReads) {
+						this.run(2);
 
-							args[0] = "bwa";
-							args[1] = "mem";
-							args[2] = "-f";
-							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-							args[4] = "-R";
-							args[5] = this.rgheader;
-							args[6] = indexRoute;
-							args[7] = tmpFileString;
-							args[8] = tmpFileString2;
-							
-							outputFileName = args[3];
-						}
-						
-						else{
-							args = new String[7];
-
-							args[0] = "bwa";
-							args[1] = "mem";
-							args[2] = "-f";
-							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-							args[4] = indexRoute;
-							args[5] = tmpFileString;
-							args[6] = tmpFileString2;
-
-							outputFileName = args[3];
-						}
-						
-						
-
-						//bwa execution
-						BwaJni.Bwa_Jni(args);
-					}
-					else if((conf.get("bwasw")!=null)&&(conf.get("bwasw").equals("true"))){
-						args = new String[7];
-
-						args[0] = "bwa";
-						args[1] = "bwasw";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = tmpFileString;
-						args[6] = tmpFileString2;
-
-						outputFileName = args[3];
-
-						//bwa execution
-						BwaJni.Bwa_Jni(args);
-					}
-					else if((conf.get("aln")!=null)&&(conf.get("aln").equals("true"))){
-						args = new String[6];
-
-						this.saiFile1 = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sai";
-						this.saiFile2 = tmpDir+"/Output"+this.identificador+"-2-"+String.valueOf(jobID)+".sai";
-
-						args[0] = "bwa";
-						args[1] = "aln";
-						args[2] = "-f";
-						args[3] = saiFile1;
-						args[4] = indexRoute;
-						args[5] = tmpFileString;
-
-						//bwa execution for aln1
-						BwaJni.Bwa_Jni(args);
-
-						LOG.info("ALN - End of first alignment");
-						String[] args2 = new String[6];
-
-						args2[0] = "bwa";
-						args2[1] = "aln";
-						args2[2] = "-f";
-						args2[3] = saiFile2;
-						args2[4] = indexRoute;
-						args2[5] = tmpFileString2;
-
-						LOG.info("ALN - Begin of second alignment");
-						for(String newArg: args2){
-							LOG.warn("Arg: "+newArg);
-						}
-
-						//bwa execution for aln2
-						BwaJni.Bwa_Jni(args2);
-
-						//Sampe
-						if(this.rgheader!=""){
-							args = new String[11];
-							args[0] = "bwa";
-							args[1] = "sampe";
-							args[2] = "-f";
-							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-							args[4] = indexRoute;
-							args[5] = "-r";
-							args[6] = this.rgheader;
-							args[7] = saiFile1;
-							args[8] = saiFile2;
-							args[9] = tmpFileString;
-							args[10] = tmpFileString2;
-						}
-						else{
-							args = new String[9];
-							args[0] = "bwa";
-							args[1] = "sampe";
-							args[2] = "-f";
-							args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-							args[4] = indexRoute;
-							args[5] = saiFile1;
-							args[6] = saiFile2;
-							args[7] = tmpFileString;
-							args[8] = tmpFileString2;
-						}
-						
-						
-
-						outputFileName = args[3];
-						
-						//bwa execution of sampe
-						LOG.info("ALN - Begin of sampe");
-						BwaJni.Bwa_Jni(args);
-
-						LOG.info("ALN - End of sampe");
-
-						File tempFile = new File(saiFile1);
-						tempFile.delete();
-
-						tempFile = new File(saiFile2);
-						tempFile.delete();
-
-						
-
+						//Delete .sai file number 2
+						this.saiFile2 = tmpFileString2 + ".sai";
+						File tmpSaiFile2 = new File(tmpFileString2 + ".sai");
+						tmpSaiFile2.delete();
 					}
 
-					//We copy the results to HDFS and delete tmp files from local filesystem
-					FileSystem fs = FileSystem.get(context.getConfiguration());
+					//Delete *.sai file number 1
+					File tmpSaiFile1 = new File(tmpFileString + ".sai");
+					tmpSaiFile1.delete();
+				}
 
-					fs.copyFromLocalFile(new Path(outputFileName), new Path(outputDir+"/Output"+this.identificador+".sam"));
-					fs.copyFromLocalFile(new Path(tmpFileString), new Path(outputDir+"/Input"+this.identificador+"_1.fq"));
+
+				//We copy the results to HDFS and delete tmp files from local filesystem
+				FileSystem fs = FileSystem.get(context.getConfiguration());
+
+				fs.copyFromLocalFile(new Path(outputFileName), new Path(this.outputDir+"/Output"+this.identificador+".sam"));
+				fs.copyFromLocalFile(new Path(tmpFileString), new Path(this.outputDir+"/Input"+this.identificador+"_1.fq"));
+
+				if (this.pairedReads) {
 					fs.copyFromLocalFile(new Path(tmpFileString2), new Path(outputDir+"/Input"+this.identificador+"_2.fq"));
-
-					File outputFile = new File(outputFileName);
-					outputFile.delete();
-
-					fout.delete();
 					fout2.delete();
-
-					if((conf.get("useReducer")!=null)&&(conf.get("useReducer").equals("true"))){
-						context.write(new IntWritable(this.identificador), new Text(outputDir+"/Output"+this.identificador+".sam"));
-					}
-
-
 				}
-				//Single algorithms
-				else{
-					if(conf.get("mem").equals("true")){
-						//String outputDir = context.getConfiguration().get("outputGenomics");
-						args = new String[6];
 
-						args[0] = "bwa";
-						args[1] = "mem";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = tmpFileString;
 
-						//bwa execution
-						BwaJni.Bwa_Jni(args);
+				File outputFile = new File(outputFileName);
+				outputFile.delete();
 
-						//We copy the results to HDFS and delete tmp files from local filesystem
-						FileSystem fs = FileSystem.get(context.getConfiguration());
+				fout.delete();
 
-						fs.copyFromLocalFile(new Path(args[3]), new Path(outputDir+"/Output"+this.identificador+".sam"));
-						fs.copyFromLocalFile(new Path(tmpFileString), new Path(outputDir+"/Input"+this.identificador+".fq"));
 
-						File outputFile = new File(args[3]);
-						outputFile.delete();
-						fout.delete();
-
-					}
-					else if(conf.get("bwasw").equals("true")){
-						//String outputDir = context.getConfiguration().get("outputGenomics");
-						args = new String[6];
-
-						args[0] = "bwa";
-						args[1] = "bwasw";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = tmpFileString;
-
-						this.outputFileName = args[3];
-						
-						//bwa execution
-						BwaJni.Bwa_Jni(args);
-
-						//We copy the results to HDFS and delete tmp files from local filesystem
-						FileSystem fs = FileSystem.get(context.getConfiguration());
-
-						fs.copyFromLocalFile(new Path(args[3]), new Path(outputDir+"/Output"+this.identificador+".sam"));
-						fs.copyFromLocalFile(new Path(tmpFileString), new Path(outputDir+"/Input"+this.identificador+".fq"));
-
-						File outputFile = new File(args[3]);
-						outputFile.delete();
-						fout.delete();
-
-					}
-					else if(conf.get("aln").equals("true")){
-						args = new String[6];
-						
-						String saiFile = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sai";
-
-						args[0] = "bwa";
-						args[1] = "aln";
-						args[2] = "-f";
-						args[3] = saiFile;
-						args[4] = indexRoute;
-						args[5] = tmpFileString;
-
-						//bwa execution
-						BwaJni.Bwa_Jni(args);
-
-						args = new String[7];
-						args[0] = "bwa";
-						args[1] = "samse";
-						args[2] = "-f";
-						args[3] = tmpDir+"/Output"+this.identificador+"-"+String.valueOf(jobID)+".sam";
-						args[4] = indexRoute;
-						args[5] = saiFile;
-						args[6] = tmpFileString;
-
-						this.outputFileName = args[3];
-						
-						//bwa execution of sampe
-						BwaJni.Bwa_Jni(args);
-
-						File tempFile = new File(saiFile);
-						tempFile.delete();
-
-						
-						
-						//We copy the results to HDFS and delete tmp files from local filesystem
-						//String outputDir = context.getConfiguration().get("outputGenomics");
-
-						FileSystem fs = FileSystem.get(context.getConfiguration());
-
-						fs.copyFromLocalFile(new Path(args[3]), new Path(outputDir+"/Output"+this.identificador+".sai"));
-						fs.copyFromLocalFile(new Path(tmpFileString), new Path(outputDir+"/Input"+this.identificador+".fq"));
-
-						File outputFile = new File(args[3]);
-
-						fout.delete();
-						outputFile.delete();
-					}
-					
-					if((conf.get("useReducer")!=null)&&(conf.get("useReducer").equals("true"))){
-						context.write(new IntWritable(this.identificador), new Text(outputDir+"/Output"+this.identificador+".sam"));
-					}
-
+				if((conf.get("useReducer")!=null)&&(conf.get("useReducer").equals("true"))){
+					context.write(new IntWritable(this.identificador), new Text(outputDir+"/Output"+this.identificador+".sam"));
 				}
+
+
+
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -699,6 +478,150 @@ public class BigBWA extends Configured implements Tool {
 
 		}
 
+		/**
+		 *
+		 * @param alnStep Param to know if the aln algorithm is going to be used and BWA functions need to be executes more than once
+		 * @return A String array containing the parameters to launch BWA
+		 */
+		private String[] parseParameters(int alnStep) {
+			ArrayList<String> parameters = new ArrayList<String>();
+
+			//The first parameter is always "bwa"======================================================
+			parameters.add("bwa");
+
+			//The second parameter is the algorithm election===========================================
+			String algorithm = "";
+
+			//Case of "mem" algorithm
+			if (this.memAlgorithm && !this.alnAlgorithm && !this.bwaswAlgorithm) {
+				algorithm = "mem";
+			}
+			//Case of "aln" algorithm
+			else if (!this.memAlgorithm && this.alnAlgorithm && !this.bwaswAlgorithm) {
+				//Aln algorithm and paired reads
+				if (this.pairedReads) {
+					//In the two first steps, the aln option is used
+					if (alnStep < 2) {
+						algorithm = "aln";
+					}
+					//In the third one, the "sampe" has to be performed
+					else {
+						algorithm = "sampe";
+					}
+				}
+				//Aln algorithm single reads
+				else if (this.singleReads) {
+					//In the first step the "aln" ins performed
+					if (alnStep == 0) {
+						algorithm = "aln";
+					}
+					//In the second step, the "samse" is performed
+					else {
+						algorithm = "samse";
+					}
+				}
+			}
+
+			//The last case is the "bwasw"
+			else if (!this.memAlgorithm && !this.alnAlgorithm && this.bwaswAlgorithm) {
+				algorithm = "bwasw";
+			}
+
+			parameters.add(algorithm);
+
+			// If extra BWA parameters are added
+			if (!this.bwaArgs.isEmpty()) {
+
+				String[] arrayBwaArgs = this.bwaArgs.split(" ");
+				int numBwaArgs = arrayBwaArgs.length;
+
+				for( int i = 0; i< numBwaArgs; i++) {
+					parameters.add(arrayBwaArgs[i]);
+				}
+
+				//parameters.add(this.bwaArgs);
+			}
+
+			//The third parameter is the output file===================================================
+			parameters.add("-f");
+
+			if (algorithm.equals("aln")) {
+				if (alnStep == 0) {
+					parameters.add(this.tmpFileString + ".sai");
+				}
+				else if (alnStep == 1 && this.pairedReads) {
+					parameters.add(this.tmpFileString2 + ".sai");
+				}
+			}
+			else {
+				// For all other algorithms the output is a SAM file.
+				parameters.add(this.outputFileName);
+			}
+
+			//The fifth, the index path===============================================================
+			parameters.add(this.indexRoute);
+
+			//The sixth, the input files===============================================================
+
+			//If the "mem" algorithm, we add the FASTQ files
+			if (algorithm.equals("mem") || algorithm.equals("bwasw")) {
+				parameters.add(this.tmpFileString);
+
+				if (this.pairedReads) {
+					parameters.add(this.tmpFileString2);
+				}
+			}
+
+			//If "aln" algorithm, and aln step is 0 or 1, also FASTQ files
+			else if (algorithm.equals("aln")) {
+				if (alnStep == 0) {
+					parameters.add(this.tmpFileString);
+				}
+				else if (alnStep == 1 && this.pairedReads) {
+					parameters.add(this.tmpFileString2);
+				}
+			}
+
+			//If "sampe" the input files are the .sai from previous steps
+			else if (algorithm.equals("sampe")) {
+				parameters.add(this.tmpFileString + ".sai");
+				parameters.add(this.tmpFileString2 + ".sai");
+				parameters.add(this.tmpFileString);
+				parameters.add(this.tmpFileString2);
+			}
+
+			//If "samse", only one .sai file
+			else if (algorithm.equals("samse")) {
+				parameters.add(this.tmpFileString + ".sai");
+				parameters.add(this.tmpFileString);
+			}
+
+			String[] parametersArray = new String[parameters.size()];
+
+			return parameters.toArray(parametersArray);
+		}
+
+		/**
+		 * This Function is responsible for creating the options that are going to be passed to BWA
+		 *
+		 * @param alnStep An integer that indicates at with phase of the aln step the program is
+		 * @return A Strings array containing the options which BWA was launched
+		 */
+		public int run(int alnStep) {
+			// Get the list of arguments passed by the user
+			String[] parametersArray = parseParameters(alnStep);
+
+			// Call to JNI with the selected parameters
+			int returnCode = BwaJni.Bwa_Jni(parametersArray);
+
+			if (returnCode != 0) {
+				LOG.error("["+this.getClass().getName()+"] :: BWA exited with error code: " + String.valueOf(returnCode));
+				return returnCode;
+			}
+
+			// The run was successful
+			return 0;
+		}
 
 	}
 
