@@ -11,7 +11,7 @@ All of them work with paired and single-end reads.
 
 If you use **BigBWA**, please cite this article:
 
-José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics 31(24), pp. 4003-4005, 2015.
+> José M. Abuin, Juan C. Pichel, Tomás F. Pena and Jorge Amigo. ["BigBWA: approaching the Burrows–Wheeler aligner to Big Data technologies"][4]. Bioinformatics 31(24), pp. 4003-4005, 2015.
 
 A version for [Apache Spark][6] is available [here][7].
 
